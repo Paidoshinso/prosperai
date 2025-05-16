@@ -4,7 +4,7 @@ import { Client, Account } from 'appwrite';
 // Inicializa o cliente do Appwrite
 const client = new Client()
   .setEndpoint('https://cloud.appwrite.io/v1') // Substitua pelo seu endpoint
-  .setProject('Esqueci totalmente kskskskskskksks tu ainda me avisou lucas'); // Substitua pelo seu Project ID
+  .setProject('APPWRITE_TOKEN'); // Substitua pelo seu Project ID
 
 export const account = new Account(client);
 

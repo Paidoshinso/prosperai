@@ -22,7 +22,7 @@ export default function IRCalculatorScreen() {
     if (incomeValue < minimumTaxableIncome) {
       Alert.alert(
         'Isento de Imposto',
-        `O valor mínimo para ser tributado é R$ 2.259,20}.`
+        `O valor mínimo para ser tributado é R$ 2.259,20.`
       );
       setTax('0.00'); // Define o imposto como zero
       setTaxRate(0); // Define a taxa de imposto como zero

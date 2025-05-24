@@ -1,48 +1,46 @@
-name: 🚀 Node.js CI Pipeline
+# Workflow para CI com Node.js - Várias etapas organizadas
+
+name: Node.js CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  test-and-build:
-    name: 🔍 Test & Build (Node ${{ matrix.node-version }})
+  build:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
-    
+        node-version: ["18.x", "20.x", "22.x"]  # Versões do Node.js a testar
+
     steps:
-      - name: 🛒 Checkout code
+      # ────────────────
+      # ➤ Etapa 1: Checkout do repositório
+      - name: 📦 Checkout do código
         uses: actions/checkout@v4
-        
-      - name: ⎔ Setup Node.js ${{ matrix.node-version }}
+
+      # ────────────────
+      # ➤ Etapa 2: Configurar Node.js e cache
+      - name: 🧱 Configurar Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: package-lock.json
-          
-      - name: 📦 Install dependencies
+
+      # ────────────────
+      # ➤ Etapa 3: Instalar dependências
+      - name: 🔧 Instalar dependências (npm ci)
         run: npm ci
-        env:
-          CI: true
-          
-      - name: 🏗️ Build project
+
+      # ────────────────
+      # ➤ Etapa 4: Build do projeto (opcional)
+      - name: 🛠️ Executar build (se disponível)
         run: npm run build --if-present
-        if: success()
-        
-      - name: 🧪 Run tests
+
+      # ────────────────
+      # ➤ Etapa 5: Rodar testes
+      - name: ✅ Rodar testes
         run: npm test
-        env:
-          CI: true
-          
-      - name: 📊 Test summary
-        if: always()
-        run: |
-          echo "✅ Tests completed for Node ${{ matrix.node-version }}"
-          echo "📦 Node version: $(node -v)"
-          echo "🔄 npm version: $(npm -v)"

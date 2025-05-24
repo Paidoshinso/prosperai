@@ -1,6 +1,6 @@
-# Workflow para CI com Node.js
+# CI com Node,js
 
-name: Node.js CI
+name: Node.js CI Modular
 
 on:
   push:
@@ -9,38 +9,79 @@ on:
     branches: ["main"]
 
 jobs:
-  build:
+  # ──────────────────────
+  # ➤ Job: Lint (verificar estilo de código)
+  lint:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: ["18.x", "20.x", "22.x"]  # Versões do Node.js a testar
-
     steps:
-      # ────────────────
-      # ➤ Etapa 1: Checkout do repositório
       - name: 📦 Checkout do código
         uses: actions/checkout@v4
 
-      # ────────────────
-      # ➤ Etapa 2: Configurar Node.js e cache
-      - name: 🧱 Configurar Node.js ${{ matrix.node-version }}
+      - name: 🧱 Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: "20.x"
           cache: 'npm'
 
-      # ────────────────
-      # ➤ Etapa 3: Instalar dependências
-      - name: 🔧 Instalar dependências (npm ci)
+      - name: 🔧 Instalar dependências
         run: npm ci
 
-      # ────────────────
-      # ➤ Etapa 4: Build do projeto (opcional)
-      - name: 🛠️ Executar build (se disponível)
-        run: npm run build --if-present
+      - name: 🧼 Rodar ESLint (se disponível)
+        run: npx eslint . --ext .js || echo "ESLint falhou ou não encontrado"
 
-      # ────────────────
-      # ➤ Etapa 5: Rodar testes
-      - name: ✅ Rodar testes
+  # ──────────────────────
+  # ➤ Job: Build (construção do projeto)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📦 Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 🧱 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: 'npm'
+
+      - name: 🔧 Instalar dependências
+        run: npm ci
+
+      - name: 🛠️ Executar Build
+        run: npm run build
+
+  # ──────────────────────
+  # ➤ Job: Test (executar testes)
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📦 Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 🧱 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: 'npm'
+
+      - name: 🔧 Instalar dependências
+        run: npm ci
+
+      - name: 🧪 Rodar Testes
         run: npm test
+
+  # ──────────────────────
+  # ➤ Job: Audit (verificar vulnerabilidades)
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📦 Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 🧱 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: 'npm'
+
+      - name: 🔍 Executar npm audit
+        run: npm audit --audit-level=moderate

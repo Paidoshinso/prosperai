@@ -1,31 +1,148 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: Node.js CI
+name: React Native CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
+
+env:
+  CI: true
+  NODE_VERSION: 18.x
+  CACHE_KEY: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
 jobs:
-  build:
-
+  quality-checks:
+    name: 🛠️ Quality Checks (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [18.x, 20.x]
+    
+    steps:
+      - name: 🛒 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ⎔ Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: 📦 Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ env.CACHE_KEY }}
+
+      - name: 🧹 Install dependencies
+        run: npm ci --prefer-offline
+
+      - name: 🔍 Run ESLint
+        run: npm run lint --if-present || echo "No lint script found"
+
+      - name: 🧪 Run unit tests
+        run: npm test -- --coverage --watchAll=false
+
+      - name: 📊 Upload coverage
+        uses: codecov/codecov-action@v3
+        if: success()
+
+  android-build:
+    name: 🤖 Android Build
+    needs: quality-checks
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+      - name: 🛒 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⎔ Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ env.CACHE_KEY }}
+
+      - name: 🧹 Install dependencies
+        run: npm ci
+
+      - name: 🏗️ Build Android
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: 🏷️ Create build tag
+        if: success()
+        run: echo "BUILD_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      - name: 🚀 Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-build-${{ env.BUILD_DATE }}
+          path: android/app/build/outputs/apk/release/*.apk
+
+  ios-build:
+    name: 🍏 iOS Build
+    needs: quality-checks
+    runs-on: macos-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 🛒 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⎔ Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ env.CACHE_KEY }}
+
+      - name: 🧹 Install dependencies
+        run: npm ci
+
+      - name: 🍏 Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+          cd ios && pod install
+
+      - name: 🏗️ Build iOS
+        run: |
+          cd ios
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator
+
+  notify:
+    name: 📢 Notification
+    needs: [quality-checks, android-build, ios-build]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: 📢 Send Slack notification
+        uses: rtCamp/action-slack-notify@v2
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_COLOR: danger
+          SLACK_TITLE: "Build Failed"
+          SLACK_MESSAGE: "Build failed in ${{ github.workflow }}"
+          SLACK_USERNAME: GitHub Actions

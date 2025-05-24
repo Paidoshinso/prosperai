@@ -1,10 +1,13 @@
 // services/appwrite.js
 import { Client, Account } from 'appwrite';
+import * as dotenv from 'expo-dotenv';
 
-// Inicializa o cliente do Appwrite
+// Carrega as variáveis do .env
+dotenv.loadAsync();
+
 const client = new Client()
-  .setEndpoint('https://cloud.appwrite.io/v1') // Substitua pelo seu endpoint
-  .setProject('APPWRITE_TOKEN'); // Substitua pelo seu Project ID
+  .setEndpoint(process.env.APPWRITE_ENDPOINT) 
+  .setProject(process.env.APPWRITE_PROJECT_ID); 
 
 export const account = new Account(client);
 

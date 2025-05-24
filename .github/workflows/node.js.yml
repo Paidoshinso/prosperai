@@ -34,9 +34,11 @@ jobs:
       # ➤ Etapa 3: Instalar dependências
       - name: 🔧 Instalar dependências (npm ci)
         run: npm ci
-        
 
       # ────────────────
-      # ➤ Etapa 4: Rodar testes
-      - name: ✅ Rodar testes
-        run: npm test
+      # ➤ Etapa 4: Rodar testes individualmente
+      - name: ✅ Rodar Navigation.test.js
+        run: npx jest Navigation.test.js --verbose
+
+      - name: ✅ Rodar api.test.js
+        run: npx jest api.test.js --verbose

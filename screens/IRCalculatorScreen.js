@@ -17,12 +17,12 @@ export default function IRCalculatorScreen() {
     }
 
     // Valor mínimo para ser tributado (de acordo com o Diário Oficial)
-    const minimumTaxableIncome = 3036.01;
+    const minimumTaxableIncome = 2259.20;
 
     if (incomeValue < minimumTaxableIncome) {
       Alert.alert(
         'Isento de Imposto',
-        `O valor mínimo para ser tributado é R$ ${minimumTaxableIncome.toFixed(2)}.`
+        `O valor mínimo para ser tributado é R$ 2.259,20.`
       );
       setTax('0.00'); // Define o imposto como zero
       setTaxRate(0); // Define a taxa de imposto como zero
@@ -32,11 +32,11 @@ export default function IRCalculatorScreen() {
     let taxPercentage = 0; // Variável para armazenar a porcentagem
 
     // Faixas de imposto de renda (De acordo com a norma publicada no Diário Oficial da União)
-    if (incomeValue <= 3533.31) {
+    if (incomeValue <= 2259.21) {
       taxPercentage = 7.5; // 7.5%
-    } else if (incomeValue <= 4688.85) {
+    } else if (incomeValue <= 2826.66) {
       taxPercentage = 15; // 15%
-    } else if (incomeValue <= 5830.85) {
+    } else if (incomeValue <= 3751.07) {
       taxPercentage = 22.5; // 22.5%
     } else {
       taxPercentage = 27.5; // 27.5%

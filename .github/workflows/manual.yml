@@ -1,0 +1,50 @@
+# Workflow para CI com Node.js - Acionado Manualmente
+
+name: Manual Node.js CI
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      node-version:
+        description: 'Versão do Node.js a ser usada (ex.: 18.x, 20.x, 22.x)'
+        default: '18.x'
+        required: true
+        type: string
+      test-file:
+        description: 'Arquivo de teste específico a ser executado (ex.: Navigation.test.js, api.test.js)'
+        default: 'Navigation.test.js'
+        required: false
+        type: string
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      # ────────────────
+      # ➤ Etapa 1: Checkout do repositório
+      - name: 📦 Checkout do código
+        uses: actions/checkout@v4
+
+      # ────────────────
+      # ➤ Etapa 2: Configurar Node.js e cache
+      - name: 🧱 Configurar Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      # ────────────────
+      # ➤ Etapa 3: Instalar dependências
+      - name: 🔧 Instalar dependências (npm ci)
+        run: npm ci
+
+      # ────────────────
+      # ➤ Etapa 4: Rodar testes específicos ou padrão
+      - name: ✅ Rodar teste ${{ inputs.test-file }}
+        run: npx jest ${{ inputs.test-file }} --verbose
